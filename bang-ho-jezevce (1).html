@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bang ho, jezevce!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --soil: #6B4226;
+    --soil-dark: #4A2C18;
+    --moss: #3A5A40;
+    --moss-dark: #26402C;
+    --sand: #F2E8CF;
+    --ink: #22333B;
+    --amber: #DDA15E;
+    --miss: #C1440E;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    user-select: none;
+  }
+
+  body {
+    background: radial-gradient(ellipse at top, #6f9b6a 0%, var(--moss) 55%, var(--moss-dark) 100%);
+    font-family: 'Nunito', sans-serif;
+    color: var(--sand);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  header {
+    width: 100%;
+    text-align: center;
+    padding: 18px 10px 8px;
+  }
+
+  h1 {
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.6rem, 7vw, 2.4rem);
+    margin: 0;
+    color: var(--sand);
+    text-shadow: 0 3px 0 var(--soil-dark);
+    letter-spacing: 0.5px;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+    opacity: 0.85;
+    margin-top: 4px;
+  }
+
+  .hud {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px 0 4px;
+    font-family: 'Baloo 2', sans-serif;
+  }
+
+  .pill {
+    background: var(--soil-dark);
+    border: 2px solid var(--amber);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    min-width: 76px;
+    text-align: center;
+  }
+
+  .pill.side {
+    border-color: #8fae72;
+    opacity: 0.92;
+    font-size: 0.85rem;
+    padding: 5px 14px;
+  }
+
+  .field {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4vw;
+    padding: 6vw;
+    width: min(94vw, 480px);
+    margin-top: 14px;
+  }
+
+  .hole {
+    position: relative;
+    aspect-ratio: 1 / 0.85;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .mound {
+    position: absolute;
+    bottom: 6%;
+    width: 100%;
+    height: 55%;
+    background: radial-gradient(ellipse at center, var(--soil) 0%, var(--soil-dark) 100%);
+    border-radius: 50%;
+    box-shadow: inset 0 -6px 10px rgba(0,0,0,0.35);
+  }
+
+  .hole-mouth {
+    position: absolute;
+    bottom: 22%;
+    width: 62%;
+    height: 34%;
+    background: #150d09;
+    border-radius: 50%;
+    box-shadow: inset 0 6px 10px rgba(0,0,0,0.6);
+  }
+
+  .badger-wrap {
+    position: absolute;
+    bottom: -8%;
+    width: 58%;
+    height: 128%;
+    transform: translateY(78%);
+    transition: transform 0.14s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none;
+  }
+
+  .hole.up .badger-wrap {
+    transform: translateY(0%);
+    pointer-events: auto;
+  }
+
+  .hole.hit .badger-wrap {
+    transform: translateY(78%) scale(0.7);
+    transition: transform 0.18s ease-in;
+  }
+
+  .badger-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4));
+  }
+
+  .hole.golden .badger-img {
+    filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4)) drop-shadow(0 0 10px gold) drop-shadow(0 0 18px #ffcc33);
+    animation: golden-pulse 0.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes golden-pulse {
+    from { filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4)) drop-shadow(0 0 6px gold); }
+    to   { filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4)) drop-shadow(0 0 20px #ffdd55); }
+  }
+
+  .golden-tag {
+    position: absolute;
+    top: -8%;
+    left: -4%;
+    font-size: 1.1rem;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .hole.golden .golden-tag {
+    opacity: 1;
+  }
+
+  .score-pop {
+    position: absolute;
+    left: 50%;
+    top: 20%;
+    transform: translate(-50%, 0);
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: gold;
+    text-shadow: 0 2px 0 #7a5a00;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .score-pop.show {
+    animation: score-float 0.7s ease-out forwards;
+  }
+
+  @keyframes score-float {
+    0%   { opacity: 1; transform: translate(-50%, 0) scale(0.8); }
+    60%  { opacity: 1; transform: translate(-50%, -30px) scale(1.15); }
+    100% { opacity: 0; transform: translate(-50%, -46px) scale(1); }
+  }
+
+  .laugh-bubble {
+    position: absolute;
+    top: -14%;
+    right: -6%;
+    background: var(--sand);
+    color: var(--ink);
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 3px 9px;
+    border-radius: 12px;
+    opacity: 0;
+    transform: scale(0.5);
+    transform-origin: bottom left;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .laugh-bubble.show {
+    animation: pop-laugh 0.9s ease-out forwards;
+  }
+
+  @keyframes pop-laugh {
+    0%   { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+    25%  { opacity: 1; transform: scale(1.15) rotate(4deg); }
+    40%  { transform: scale(1) rotate(0deg); }
+    80%  { opacity: 1; }
+    100% { opacity: 0; transform: scale(0.9) translateY(-10px); }
+  }
+
+  .status {
+    margin-top: 16px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 1.1rem;
+    min-height: 1.4em;
+    text-align: center;
+  }
+
+  .start-btn {
+    margin-top: 10px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    background: var(--amber);
+    color: var(--soil-dark);
+    border: none;
+    border-radius: 999px;
+    padding: 12px 30px;
+    box-shadow: 0 4px 0 #a8763d;
+    cursor: pointer;
+  }
+
+  .start-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #a8763d;
+  }
+
+  footer {
+    margin-top: auto;
+    padding: 14px;
+    font-size: 0.7rem;
+    opacity: 0.6;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🦡 Bang ho, jezevce!</h1>
+  <div class="subtitle">Ťukni na jezevce dřív, než zaleze zpátky do nory</div>
+</header>
+
+<div class="hud">
+  <div class="pill side">Poslední: <span id="lastScore">0</span></div>
+  <div class="pill">Skóre: <span id="score">0</span></div>
+  <div class="pill">Čas: <span id="time">30</span>s</div>
+  <div class="pill side">Nejlepší: <span id="bestScore">0</span></div>
+</div>
+
+<div class="field" id="field"></div>
+
+<div class="status" id="status">Klepni na „Start“ a jde se na to</div>
+<button class="start-btn" id="startBtn">Start hry</button>
+
+<!--
+  ====== MÍSTO PRO VLASTNÍ SOUBORY ======
+  Až budeš mít fotku obličeje jezevce a zvuk smíchu, ulož je do stejné
+  složky jako tento HTML soubor a přejmenuj je přesně takto:
+
+    badger-face.png          -> fotka/obrázek jezevce, co vykukuje z nory
+    badger-face-golden.png   -> (volitelné) fotka jezevce se zlatým zubem
+    laugh.mp3                 -> zvuk smíchu, který se přehraje při netrefení
+
+  Nic jiného v kódu není potřeba měnit - soubory se načtou automaticky.
+  Dokud soubory neexistují, hra použije náhradní nakreslenou "emoji"
+  tvář a syntetizovaný chechtavý smích.
+-->
+<audio id="laughAudio" preload="auto" src="laugh.mp3"></audio>
+
+<footer>Vytvořeno pro tvou hru — nahraď obrázek a zvuk kdykoliv budeš mít hotové soubory 🦡</footer>
+
+<script>
+  const JEZEVEC_IMG = "badger-face.png";              // <- sem později dáš cestu k fotce
+  const JEZEVEC_ZLATY_IMG = "badger-face-golden.png"; // <- volitelně vlastní fotka jezevce se zlatým zubem (jinak se použije normální fotka)
+  const HOLE_COUNT = 9;
+  const GAME_SECONDS = 30;
+
+  const field = document.getElementById('field');
+  const scoreEl = document.getElementById('score');
+  const timeEl = document.getElementById('time');
+  const statusEl = document.getElementById('status');
+  const startBtn = document.getElementById('startBtn');
+  const laughAudio = document.getElementById('laughAudio');
+  const lastScoreEl = document.getElementById('lastScore');
+  const bestScoreEl = document.getElementById('bestScore');
+
+  const STORAGE_LAST = 'bangHoJezevce_lastScore';
+  const STORAGE_BEST = 'bangHoJezevce_bestScore';
+
+  function loadSavedScores() {
+    try {
+      lastScoreEl.textContent = localStorage.getItem(STORAGE_LAST) || '0';
+      bestScoreEl.textContent = localStorage.getItem(STORAGE_BEST) || '0';
+    } catch (e) { /* localStorage nedostupné (např. souborový protokol v některých prohlížečích) */ }
+  }
+
+  function saveScores(finalScore) {
+    try {
+      localStorage.setItem(STORAGE_LAST, finalScore);
+      lastScoreEl.textContent = finalScore;
+      const best = parseInt(localStorage.getItem(STORAGE_BEST) || '0', 10);
+      if (finalScore > best) {
+        localStorage.setItem(STORAGE_BEST, finalScore);
+        bestScoreEl.textContent = finalScore;
+      }
+    } catch (e) { /* localStorage nedostupné */ }
+  }
+
+  // Fallback obrázek jezevce (kreslené tělo + hlava, jako by vylézal z nory),
+  // použije se dokud v tomtéž adresáři neexistuje badger-face.png
+  const FALLBACK_BADGER_SVG = `data:image/svg+xml;utf8,` + encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+      <path d="M18 140 Q16 70 50 58 Q84 70 82 140 Z" fill="#4a3428"/>
+      <path d="M18 140 Q16 70 50 58 Q84 70 82 140 Z" fill="none" stroke="#2a1c14" stroke-width="2"/>
+      <ellipse cx="50" cy="45" rx="34" ry="30" fill="#4a3428"/>
+      <ellipse cx="50" cy="45" rx="34" ry="30" fill="none" stroke="#2a1c14" stroke-width="2"/>
+      <path d="M28 17 Q50 -3 72 17 Q60 27 50 27 Q40 27 28 17 Z" fill="#f2e8cf"/>
+      <ellipse cx="38" cy="39" rx="6" ry="8" fill="#1a1a1a"/>
+      <ellipse cx="62" cy="39" rx="6" ry="8" fill="#1a1a1a"/>
+      <ellipse cx="50" cy="53" rx="7" ry="5" fill="#1a1a1a"/>
+      <ellipse cx="20" cy="27" rx="8" ry="10" fill="#4a3428"/>
+      <ellipse cx="80" cy="27" rx="8" ry="10" fill="#4a3428"/>
+    </svg>`);
+
+  // Stejná kresba, ale se zlatým zubem - použije se pro "golden" jezevce.
+  // Pokud později dáš vlastní JEZEVEC_IMG fotku, zlatý zub se na ni přidá
+  // jako malý překryvný obrázek (viz .golden-tag v poli).
+  const FALLBACK_BADGER_GOLDEN_SVG = `data:image/svg+xml;utf8,` + encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 140">
+      <path d="M18 140 Q16 70 50 58 Q84 70 82 140 Z" fill="#4a3428"/>
+      <path d="M18 140 Q16 70 50 58 Q84 70 82 140 Z" fill="none" stroke="#2a1c14" stroke-width="2"/>
+      <ellipse cx="50" cy="45" rx="34" ry="30" fill="#4a3428"/>
+      <ellipse cx="50" cy="45" rx="34" ry="30" fill="none" stroke="#2a1c14" stroke-width="2"/>
+      <path d="M28 17 Q50 -3 72 17 Q60 27 50 27 Q40 27 28 17 Z" fill="#f2e8cf"/>
+      <ellipse cx="38" cy="39" rx="6" ry="8" fill="#1a1a1a"/>
+      <ellipse cx="62" cy="39" rx="6" ry="8" fill="#1a1a1a"/>
+      <ellipse cx="50" cy="53" rx="7" ry="5" fill="#1a1a1a"/>
+      <rect x="47" y="53" width="5" height="7" fill="#ffd700" stroke="#a8860a" stroke-width="0.6"/>
+      <ellipse cx="20" cy="27" rx="8" ry="10" fill="#4a3428"/>
+      <ellipse cx="80" cy="27" rx="8" ry="10" fill="#4a3428"/>
+    </svg>`);
+
+  const GOLDEN_CHANCE = 0.18;   // 18% šance, že vykoukne zlatý jezevec
+  const GOLDEN_MULTIPLIER = 2;  // kolikrát víc bodů dá zlatý jezevec
+
+  let holes = [];
+  let score = 0;
+  let timeLeft = GAME_SECONDS;
+  let popTimer = null;
+  let nextSpawnTimer = null;
+  let countdownTimer = null;
+  let running = false;
+
+  function buildField() {
+    field.innerHTML = '';
+    holes = [];
+    for (let i = 0; i < HOLE_COUNT; i++) {
+      const hole = document.createElement('div');
+      hole.className = 'hole';
+
+      const mound = document.createElement('div');
+      mound.className = 'mound';
+
+      const mouth = document.createElement('div');
+      mouth.className = 'hole-mouth';
+
+      const badgerWrap = document.createElement('div');
+      badgerWrap.className = 'badger-wrap';
+
+      const img = document.createElement('img');
+      img.className = 'badger-img';
+      img.src = JEZEVEC_IMG;
+      img.onerror = () => { img.onerror = null; img.src = FALLBACK_BADGER_SVG; };
+
+      const bubble = document.createElement('div');
+      bubble.className = 'laugh-bubble';
+      bubble.textContent = 'HA HA HA! 🤡';
+
+      const goldenTag = document.createElement('div');
+      goldenTag.className = 'golden-tag';
+      goldenTag.textContent = '✨🦷✨';
+
+      const scorePop = document.createElement('div');
+      scorePop.className = 'score-pop';
+
+      badgerWrap.appendChild(img);
+      badgerWrap.appendChild(bubble);
+      badgerWrap.appendChild(goldenTag);
+      badgerWrap.appendChild(scorePop);
+      hole.appendChild(mound);
+      hole.appendChild(mouth);
+      hole.appendChild(badgerWrap);
+      field.appendChild(hole);
+
+      hole.addEventListener('pointerdown', () => onHolePress(i));
+      holes.push({ el: hole, bubble, scorePop, img, up: false, golden: false, timeout: null });
+    }
+  }
+
+  function playLaugh() {
+    // Zkusí přehrát vlastní laugh.mp3, pokud selže (soubor zatím neexistuje),
+    // vytvoří jednoduchý syntetizovaný "heh heh heh" pomocí Web Audio.
+    laughAudio.currentTime = 0;
+    const p = laughAudio.play();
+    if (p && p.catch) {
+      p.catch(() => synthLaugh());
+    }
+  }
+
+  function synthLaugh() {
+    // Rychlý, posměšný "ha-ha-ha" smích - víc kluků, co se ti chechtaj
+    // do ksichtu, než jemné pochechtávání. Nahradí se automaticky, jakmile
+    // dodáš vlastní laugh.mp3.
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const cackleCount = 5 + Math.floor(Math.random() * 3); // 5-7 "ha"
+      let t = ctx.currentTime;
+
+      for (let i = 0; i < cackleCount; i++) {
+        const baseFreq = 300 + Math.random() * 180;          // nepravidelná výška = víc posměšné
+        const wobble = 40 + Math.random() * 60;
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(baseFreq, t);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq + wobble, t + 0.05);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq - wobble * 0.5, t + 0.09);
+
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.22, t + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.11);
+
+        t += 0.085 + Math.random() * 0.04; // nepravidelný, uštěpačný rytmus
+      }
+    } catch (e) { /* ticho, pokud audio API selže */ }
+  }
+
+  function setBadgerImage(holeData) {
+    // Nastaví obrázek jezevce podle toho, jestli je "golden" varianta.
+    // Zlatá: zkusí badger-face-golden.png -> pak normální fotku -> pak SVG.
+    // Normální: zkusí badger-face.png -> pak SVG.
+    if (holeData.golden) {
+      holeData.img.onerror = () => {
+        holeData.img.onerror = () => {
+          holeData.img.onerror = null;
+          holeData.img.src = FALLBACK_BADGER_GOLDEN_SVG;
+        };
+        holeData.img.src = JEZEVEC_IMG;
+      };
+      holeData.img.src = JEZEVEC_ZLATY_IMG;
+    } else {
+      holeData.img.onerror = () => {
+        holeData.img.onerror = null;
+        holeData.img.src = FALLBACK_BADGER_SVG;
+      };
+      holeData.img.src = JEZEVEC_IMG;
+    }
+  }
+
+  const GAP_AFTER_MISS = 500; // ms pauzy mezi zmizením jednoho jezevce a objevením dalšího
+
+  function getUpTime(golden) {
+    // Čím vyšší skóre, tím kratší doba na reakci (max. zkrácení 380ms).
+    const difficultyCut = Math.min(score * 18, 380);
+    const base = golden ? 480 : 680;
+    const floor = golden ? 260 : 320;
+    const randomRange = golden ? 200 : 260;
+    return Math.max(base - difficultyCut, floor) + Math.random() * randomRange;
+  }
+
+  function popRandomBadger() {
+    if (!running) return;
+    const i = Math.floor(Math.random() * holes.length);
+    const holeData = holes[i];
+    holeData.up = true;
+    holeData.golden = Math.random() < GOLDEN_CHANCE;
+    setBadgerImage(holeData);
+    holeData.el.classList.add('up');
+    holeData.el.classList.remove('hit');
+    holeData.el.classList.toggle('golden', holeData.golden);
+
+    const upTime = getUpTime(holeData.golden);
+    holeData.timeout = setTimeout(() => {
+      if (holeData.up) {
+        // netrefil ses včas -> smích, pak pauza a další jezevec
+        holeData.up = false;
+        holeData.el.classList.remove('up');
+        holeData.el.classList.remove('golden');
+        triggerLaugh(holeData);
+        scheduleNext();
+      }
+    }, upTime);
+  }
+
+  function scheduleNext() {
+    if (!running) return;
+    nextSpawnTimer = setTimeout(() => {
+      if (running) popRandomBadger();
+    }, GAP_AFTER_MISS);
+  }
+
+  function triggerLaugh(holeData) {
+    holeData.bubble.classList.remove('show');
+    void holeData.bubble.offsetWidth; // reset animace
+    holeData.bubble.classList.add('show');
+    playLaugh();
+  }
+
+  function onHolePress(i) {
+    if (!running) return;
+    const holeData = holes[i];
+    if (holeData.up) {
+      const points = holeData.golden ? GOLDEN_MULTIPLIER : 1;
+      holeData.up = false;
+      clearTimeout(holeData.timeout);
+      holeData.el.classList.remove('up');
+      holeData.el.classList.add('hit');
+      score += points;
+      scoreEl.textContent = score;
+
+      holeData.scorePop.textContent = '+' + points + (holeData.golden ? ' ✨' : '');
+      holeData.scorePop.classList.remove('show');
+      void holeData.scorePop.offsetWidth;
+      holeData.scorePop.classList.add('show');
+
+      setTimeout(() => {
+        holeData.el.classList.remove('hit');
+        holeData.el.classList.remove('golden');
+      }, 200);
+
+      scheduleNext();
+    } else {
+      // ťuknutí vedle -> taky se jezevec zasměje
+      triggerLaugh(holeData);
+    }
+  }
+
+  function startGame() {
+    if (running) return;
+    running = true;
+    score = 0;
+    timeLeft = GAME_SECONDS;
+    scoreEl.textContent = score;
+    timeEl.textContent = timeLeft;
+    statusEl.textContent = 'Hraje se! 🦡';
+    startBtn.disabled = true;
+    buildField();
+
+    popRandomBadger();
+
+    countdownTimer = setInterval(() => {
+      timeLeft--;
+      timeEl.textContent = timeLeft;
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+  }
+
+  function endGame() {
+    running = false;
+    clearTimeout(popTimer);
+    clearTimeout(nextSpawnTimer);
+    clearInterval(countdownTimer);
+    holes.forEach(h => { h.up = false; h.el.classList.remove('up'); h.el.classList.remove('golden'); clearTimeout(h.timeout); });
+    statusEl.textContent = `Konec! Skóre: ${score} 🏆`;
+    startBtn.disabled = false;
+    startBtn.textContent = 'Hrát znovu';
+    saveScores(score);
+  }
+
+  buildField();
+  loadSavedScores();
+  startBtn.addEventListener('click', startGame);
+</script>
+
+</body>
+</html>
